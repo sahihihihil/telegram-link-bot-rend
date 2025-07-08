@@ -289,8 +289,12 @@ async def run_bot():
         logger.info(f"🔧 Admin ID: {ADMIN_ID}")
         logger.info(f"🌐 Flask server running on port: {PORT}")
         
-        # Start the bot
-        await app.run_polling()
+        # Start the bot with polling
+        await app.run_polling(
+            poll_interval=2.0,
+            timeout=20,
+            close_loop=False
+        )
         
     except Exception as e:
         logger.error(f"Fatal error starting bot: {e}")
@@ -302,7 +306,11 @@ if __name__ == "__main__":
         import nest_asyncio
         nest_asyncio.apply()
     except ImportError:
-        pass
+        logger.warning("nest_asyncio not available")
     
     # Run the bot
-    asyncio.run(run_bot())
+    try:
+        asyncio.run(run_bot())
+    except Exception as e:
+        logger.error(f"Failed to start bot: {e}")
+        raise
