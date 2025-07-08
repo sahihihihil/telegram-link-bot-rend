@@ -190,11 +190,16 @@ async def handle_admin_message(update: Update, context: ContextTypes.DEFAULT_TYP
         
         link = f"https://t.me/{bot_username}?start={code}"
         
-        await update.message.reply_text(
-            f"✅ Link generated:\n{link}\n\n"
+        # Create response without any special formatting that might cause parsing issues
+        response_text = (
+            "✅ Link generated:\n"
+            f"{link}\n\n"
             f"🔗 Code: {code}\n"
             f"⏰ Expires in 30 minutes"
         )
+        
+        logger.info(f"Sending response: {repr(response_text)}")
+        await update.message.reply_text(response_text)
         
         logger.info(f"Created new link with code: {code}")
         
@@ -320,9 +325,10 @@ async def run_bot():
         
         # Start the bot with polling
         await app.run_polling(
-            poll_interval=2.0,
-            timeout=20,
-            close_loop=False
+            poll_interval=3.0,
+            timeout=30,
+            close_loop=False,
+            drop_pending_updates=True
         )
         
     except Exception as e:
