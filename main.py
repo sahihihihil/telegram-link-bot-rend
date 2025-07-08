@@ -94,6 +94,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /start command and process shared links"""
     try:
         args = context.args
+        user_id = update.effective_user.id
+        
         if args:
             code = args[0]
             
@@ -131,7 +133,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await update.message.reply_text("❌ Invalid or expired link.")
         else:
-            await update.message.reply_text("👋 Welcome! Please contact the admin for access.")
+            # Different messages for admin and regular users
+            if user_id == ADMIN_ID:
+                await update.message.reply_text(
+                    "👋 Welcome Admin!\n\n"
+                    "Available commands:\n"
+                    "• Send any message to create a shareable link\n"
+                    "• /list - View all active links\n"
+                    "• /delete <code> - Delete a specific link\n"
+                    "• /cleanup - Remove expired links"
+                )
+            else:
+                await update.message.reply_text("👋 Welcome! Please contact the admin for access.")
     except Exception as e:
         logger.error(f"Error in start handler: {e}")
         await update.message.reply_text("❌ An error occurred. Please try again.")
@@ -139,7 +152,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_admin_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle messages from admin to create new links"""
     try:
-        if update.effective_user.id != ADMIN_ID:
+        user_id = update.effective_user.id
+        logger.info(f"Message from user {user_id}, admin is {ADMIN_ID}")
+        
+        if user_id != ADMIN_ID:
             await update.message.reply_text("⛔ Unauthorized access.")
             return
         
@@ -147,6 +163,8 @@ async def handle_admin_message(update: Update, context: ContextTypes.DEFAULT_TYP
         if not text:
             await update.message.reply_text("⚠️ Please send a non-empty message.")
             return
+        
+        logger.info(f"Creating link for message: {text[:50]}...")
         
         # Clean up expired links before creating new one
         cleanup_expired_links()
@@ -156,9 +174,20 @@ async def handle_admin_message(update: Update, context: ContextTypes.DEFAULT_TYP
             'message': text,
             'created_at': datetime.now().isoformat()
         }
+        
+        logger.info(f"Saving data with code: {code}")
         save_data()
         
-        bot_username = (await context.bot.get_me()).username
+        # Get bot username
+        try:
+            bot_info = await context.bot.get_me()
+            bot_username = bot_info.username
+            logger.info(f"Bot username: {bot_username}")
+        except Exception as e:
+            logger.error(f"Error getting bot info: {e}")
+            await update.message.reply_text("❌ Error getting bot information.")
+            return
+        
         link = f"https://t.me/{bot_username}?start={code}"
         
         await update.message.reply_text(
@@ -172,6 +201,7 @@ async def handle_admin_message(update: Update, context: ContextTypes.DEFAULT_TYP
         
     except Exception as e:
         logger.error(f"Error in admin message handler: {e}")
+        logger.error(f"Error details: {str(e)}")
         await update.message.reply_text("❌ An error occurred while creating the link.")
 
 async def list_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
