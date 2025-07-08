@@ -192,9 +192,8 @@ async def handle_admin_message(update: Update, context: ContextTypes.DEFAULT_TYP
         
         await update.message.reply_text(
             f"✅ Link generated:\n{link}\n\n"
-            f"🔗 Code: `{code}`\n"
-            f"⏰ Expires in 30 minutes",
-            parse_mode="Markdown"
+            f"🔗 Code: {code}\n"
+            f"⏰ Expires in 30 minutes"
         )
         
         logger.info(f"Created new link with code: {code}")
@@ -219,7 +218,7 @@ async def list_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         
         bot_username = (await context.bot.get_me()).username
-        response = "📋 *Active Links:*\n\n"
+        response = "📋 Active Links:\n\n"
         
         for code, data in link_messages.items():
             link = f"https://t.me/{bot_username}?start={code}"
@@ -236,11 +235,11 @@ async def list_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Truncate long messages
             display_message = message[:50] + "..." if len(message) > 50 else message
             
-            response += f"🔗 `{code}`: [Link]({link})\n"
+            response += f"🔗 {code}: {link}\n"
             response += f"📝 {display_message}\n"
             response += f"⏰ {time_left_str} remaining\n\n"
         
-        await update.message.reply_text(response, parse_mode="Markdown", disable_web_page_preview=True)
+        await update.message.reply_text(response, disable_web_page_preview=True)
         
     except Exception as e:
         logger.error(f"Error in list handler: {e}")
@@ -261,7 +260,7 @@ async def delete_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if code in link_messages:
             del link_messages[code]
             save_data()
-            await update.message.reply_text(f"✅ Link `{code}` deleted.", parse_mode="Markdown")
+            await update.message.reply_text(f"✅ Link {code} deleted.")
             logger.info(f"Manually deleted link: {code}")
         else:
             await update.message.reply_text("⚠️ Link not found.")
